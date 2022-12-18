@@ -6,9 +6,11 @@ import aiosqlite
 import nextcord
 from nextcord.ext import commands
 import nextcord.ui
+import redis
 
 import main
 
+r = redis.Redis(host='65.21.125.211', port=187)
 
 class BetaKey(commands.Cog):
     def __init__(self, bot):
@@ -44,6 +46,24 @@ class BetaKey(commands.Cog):
         await message.delete()
         await view.wait()
 
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        resault = main.DB.conttry.find_one({"key": message.content})
+        if not resault is None:
+            main.DB.con.insert_one(
+                {
+                    "dc": message.author.id,
+                    "mc": f'{resault["mc"]}',
+                    "dcname": message.author.name,
+                    "mcname": f'{resault["username"]}'
+                })
+            main.DB.conttry.delete_one({"key": message.content})
+            embed = nextcord.Embed(title='Geschafft', color=nextcord.Color.green(), description='Du kannst jetzt dem Server joinen!')
+            embed.add_field(name='Minecraft Account', value=f'{resault["username"]}')
+            embed.add_field(name='Discord Account', value=message.author.name)
+            await message.channel.send(embed=embed@)
+
+
 
 class Buttons(nextcord.ui.View):
     def __init__(self):
@@ -56,11 +76,17 @@ class Buttons(nextcord.ui.View):
         auhtor = interaction.user
         if chance == 1:
             key = f'BB00-{secrets.token_urlsafe(32)}'
+            main.DB.betakeys.insert_one(
+                {
+                    "key":key
+                }
+            )
             embed = nextcord.Embed(title='**CONGRATULATIONS**', description='Du hast einen Betakey gewonnen',
                                    color=nextcord.Color.green())
             embed.add_field(name='__WICHTIG__', value='Teile deinen **Betakey** auf keinen Fall mit __Dritten__',
                             inline=False)
             embed.add_field(name='__BETAKEY__', value=f'```{key}```', inline=False)
+
             try:
                 await auhtor.send(embed=embed)
                 embed = nextcord.Embed(title='**Geschafft**', description='Guck in deine DMS',
@@ -107,12 +133,10 @@ class Modal(nextcord.ui.Modal):
                             description=f"{interaction.user.mention} hat seinen Key aktiviert",
                             color=nextcord.Color.green())
         em.add_field(name='Key', value=f'{key}')
-        async with aiosqlite.connect('main.db') as db:
-            async with db.cursor() as cursor:
-                await cursor.execute('SELECT channel FROM log WHERE key = ?', ('log',))
-                ids = f'{await cursor.fetchone()}'.replace(",", "").replace("(", "").replace(")", "")
-                log = interaction.user.guild.get_channel(int(ids))
-                return await log.send(embed=em)
+        results = main.DB.settings.find_one({"_id": 1})
+        ids = results["log-channel"]
+        log = interaction.user.guild.get_channel(int(ids))
+        return await log.send(embed=em)
 
 
 def setup(bot):

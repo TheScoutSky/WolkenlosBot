@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import os
 import random
@@ -87,6 +88,13 @@ class Fun(commands.Cog):
 
     @nextcord.slash_command(name='question', guild_ids=[main.GUILD_ID])
     async def question(self, interaction: nextcord.Interaction, question: str):
+        ETA = int(time.time() + 30)
+        embed = nextcord.Embed(title='Question', color=nextcord.Color.orange())
+        embed.add_field(name='Frage', value=question, inline=False)
+        embed.add_field(name='Antwort', value=f'<t:{ETA}:R>', inline=False)
+        embed.set_footer(text='Made with OpenAI',
+                         icon_url='https://dwglogo.com/wp-content/uploads/2019/03/1600px-OpenAI_logo.png')
+        me = await interaction.response.send_message(embed=embed)
         completions = openai.Completion.create(
             model="text-davinci-003",
             prompt=question,
@@ -95,7 +103,7 @@ class Fun(commands.Cog):
             best_of=1,
             n=1,
         )
-
+        await asyncio.sleep(10)
         message2 = completions.choices[0].text
         print(completions.__dict__)
         message = f'{message2.strip()}'.replace('?', '').replace('\n', '')
@@ -104,12 +112,34 @@ class Fun(commands.Cog):
         embed.add_field(name='Antwort', value=f'{message.strip()}', inline=False)
         embed.set_footer(text='Made with OpenAI',
                          icon_url='https://dwglogo.com/wp-content/uploads/2019/03/1600px-OpenAI_logo.png')
-        await interaction.response.send_message(embed=embed)
+        await me.edit(embed=embed)
 
     @commands.Cog.listener()
-    async def on_message(self, messages):
+    async def on_message(self, messages: nextcord.Message):
         FRAGE_WORTER = ['Weshalb', 'Wieso', 'Wer', 'Warum', 'Wann', 'weshalb', 'wieso', 'wer', 'warum', 'wann', '?']
-        rand = random.randrange(1, 10)
+        rand = random.randrange(1, 3)
+        for mention in messages.mentions:
+            if mention.id == main.CLIENT_ID:
+                completions = openai.Completion.create(
+                    model="text-davinci-003",
+                    prompt=messages.content,
+                    temperature=0,
+                    max_tokens=4000,
+                    best_of=1,
+                    n=1, )
+                await asyncio.sleep(2)
+                message2 = completions.choices[0].text
+                print(completions.__dict__)
+                message = f'{message2.strip()}'.replace('?', '').replace('\n', '').replace('@Kai_Kai_Kai_Kai', f'{messages.guild.get_member(820333840836460565).mention}').replace('@Kirb#0001', f'{messages.guild.get_member(820333840836460565).mention}')
+                embed = nextcord.Embed(title='Question', color=nextcord.Color.orange())
+                embed.add_field(name='Frage', value=messages.content, inline=False)
+                embed.add_field(name='Antwort', value=f'{message.strip()}', inline=False)
+                embed.set_footer(text='Made with OpenAI',
+                                 icon_url='https://dwglogo.com/wp-content/uploads/2019/03/1600px-OpenAI_logo.png')
+            mes: nextcord.Message = await messages.channel.send(embed=embed)
+            view = Button(mes)
+            await mes.edit(view=view)
+            await view.wait()
         for words in FRAGE_WORTER:
             if messages.content.__contains__(words):
                 if not rand == 1:
@@ -121,6 +151,7 @@ class Fun(commands.Cog):
                     max_tokens=4000,
                     best_of=1,
                     n=1, )
+                await asyncio.sleep(2)
                 message2 = completions.choices[0].text
                 print(completions.__dict__)
                 message = f'{message2.strip()}'.replace('?', '').replace('\n', '')

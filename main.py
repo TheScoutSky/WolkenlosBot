@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import aiosqlite
 import nextcord
+import pymongo
 from nextcord.ext import commands
 from dotenv import load_dotenv
 
@@ -21,12 +22,9 @@ bot = commands.Bot(
 
 @bot.event
 async def on_ready():
+    MONGO = pymongo.MongoClient(os.getenv('MONGO_URI'))
+    DB = MONGO.wolkenlos
     print('bot is ready')
-    async with aiosqlite.connect('main.db') as db:
-        async with db.cursor() as cursor:
-            await cursor.execute('CREATE TABLE IF NOT EXISTS log (key TEXT , channel INTEGER)')
-            await cursor.execute('CREATE TABLE IF NOT EXISTS warns (user INTEGER , reason TEXT)')
-        await db.commit()
 
 
 USER_VERIFY = {}
@@ -34,7 +32,9 @@ GUILD_SAVE = {}
 GEN_USE = {}
 VERIFY_ROLE_ID = 1030426886242840586
 GUILD_ID = 1030425830725271562
-CLIENT = bot
+CLIENT_ID = 1051582605050523649
+MONGO = pymongo.MongoClient(os.getenv('MONGO_URI'))
+DB = MONGO.wolkenlos
 
 if __name__ == '__main__':
     log.info('Starting bot...')

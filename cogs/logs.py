@@ -2,8 +2,9 @@ import discord
 import nextcord
 from nextcord.ext import commands
 import aiosqlite
-
 import main
+import pymongo
+import os
 
 
 class Logs(commands.Cog):
@@ -21,29 +22,31 @@ class Logs(commands.Cog):
                 await ctx.sleep(2)
                 await message.delete()
                 return
-            async with aiosqlite.connect('main.db') as db:
-                async with db.cursor() as cursor:
-                    await cursor.execute('SELECT channel FROM log WHERE key = ?', ('log',))
-                    data = await cursor.fetchone()
-                    if data:
-                        await cursor.execute('UPDATE log SET channel = ? WHERE key = ?', (channel.id, 'log',))
-                    else:
-                        await cursor.execute('INSERT INTO log (channel, key) VALUES (?, ?)', (channel.id, 'log',))
-                await db.commit()
-                embed = nextcord.Embed(title='SETTINGS', description=f'Der Log-Channel ist nun {channel.mention}',
-                                       color=nextcord.Color.green())
-                await ctx.response.send_message(embed=embed, ephemeral=True)
+            main.DB.settings.insert_one(
+                {
+                    "_id": 1,
+                    "log-channel": channel.id
+                }
+            )
+            embed = nextcord.Embed(title='SETTINGS', description=f'Der Log-Channel ist nun {channel.mention}',
+                                   color=nextcord.Color.green())
+            await ctx.response.send_message(embed=embed, ephemeral=True)
         else:
-            async with aiosqlite.connect('main.db') as db:
-                async with db.cursor() as cursor:
-                    await cursor.execute('SELECT channel FROM log WHERE key = ?', ('log',))
-                    ids = f'{await cursor.fetchone()}'.replace(",", "").replace("(", "").replace(")", "")
-                    log = ctx.user.guild.get_channel(int(ids))
-                    print(log)
-                    print(ids)
-                    embed = nextcord.Embed(title='SETTINGS', description=f'Der Log-Channel ist momentan {log.mention}',
-                                           color=nextcord.Color.blurple())
-                    await ctx.response.send_message(embed=embed, ephemeral=True)
+            results = main.DB.settings.find_one({"_id": 1})
+            ids = results["log-channel"]
+            print(ids)
+            log = ctx.user.guild.get_channel(int(ids))
+            print(log)
+            embed = nextcord.Embed(title='SETTINGS', description=f'Der Log-Channel ist momentan {log.mention}',
+                                   color=nextcord.Color.blurple())
+            await ctx.response.send_message(embed=embed, ephemeral=True)
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        results = main.DB.settings.find_one({"_id": 1})
+        ids = results["log-channel"]
+        log = message.guild.get_channel(int(ids))
+
 
 
 def setup(bot):
