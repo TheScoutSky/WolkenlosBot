@@ -1,5 +1,6 @@
 import base64
 import os
+import random
 
 from nextcord.ext import commands
 import nextcord
@@ -68,6 +69,8 @@ class Fun(commands.Cog):
         embed = nextcord.Embed(title="Generiere dein eigenes Bild", color=nextcord.Color.orange())
         embed.add_field(name=f'**Promt**', value=prompt, inline=False)
         embed.add_field(name=f'**Wartezeit**', value=f'<t:{ETA}:R>')
+        embed.set_footer(text='Made with OpenAI',
+                         icon_url='https://dwglogo.com/wp-content/uploads/2019/03/1600px-OpenAI_logo.png')
         msg = await ctx.send(embed=embed, ephemeral=False)
         async with aiohttp.request("POST", "https://backend.craiyon.com/generate", json={"prompt": prompt}) as resp:
             r = await resp.json()
@@ -76,6 +79,8 @@ class Fun(commands.Cog):
             embed = nextcord.Embed(title="Generiere dein eigenes Bild", color=nextcord.Color.orange())
             embed.add_field(name=f'**Prompt**', value=prompt, inline=False)
             embed.add_field(name=f'**Wartezeit**', value=f'Fertig')
+            embed.set_footer(text='Made with OpenAI',
+                             icon_url='https://dwglogo.com/wp-content/uploads/2019/03/1600px-OpenAI_logo.png')
             await msg.edit(embed=embed,
                            file=nextcord.File(image, "generatedImage.png"),
                            view=DropdownView(msg, images, ctx.user.id))
@@ -100,6 +105,45 @@ class Fun(commands.Cog):
         embed.set_footer(text='Made with OpenAI',
                          icon_url='https://dwglogo.com/wp-content/uploads/2019/03/1600px-OpenAI_logo.png')
         await interaction.response.send_message(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_message(self, messages):
+        FRAGE_WORTER = ['Weshalb', 'Wieso', 'Wer', 'Warum', 'Wann', 'weshalb', 'wieso', 'wer', 'warum', 'wann', '?']
+        rand = random.randrange(1, 10)
+        for words in FRAGE_WORTER:
+            if messages.content.__contains__(words):
+                if not rand == 1:
+                    return
+                completions = openai.Completion.create(
+                    model="text-davinci-003",
+                    prompt=messages.content,
+                    temperature=0,
+                    max_tokens=4000,
+                    best_of=1,
+                    n=1, )
+                message2 = completions.choices[0].text
+                print(completions.__dict__)
+                message = f'{message2.strip()}'.replace('?', '').replace('\n', '')
+                embed = nextcord.Embed(title='Question', color=nextcord.Color.orange())
+                embed.add_field(name='Frage', value=messages.content, inline=False)
+                embed.add_field(name='Antwort', value=f'{message.strip()}', inline=False)
+                embed.set_footer(text='Made with OpenAI',
+                                 icon_url='https://dwglogo.com/wp-content/uploads/2019/03/1600px-OpenAI_logo.png')
+                mes: nextcord.Message = await messages.channel.send(embed=embed)
+                view = Button(mes)
+                await mes.edit(view=view)
+                await view.wait()
+
+
+class Button(nextcord.ui.View):
+    def __init__(self, message):
+        super().__init__()
+        self.value = None
+        self.message = message
+
+    @nextcord.ui.button(label='Delete', style=nextcord.ButtonStyle.red, custom_id='button:ai:del')
+    async def delete(self, button: nextcord.Button, interaction: nextcord.Interaction):
+        await self.message.delete()
 
 
 def setup(bot):
