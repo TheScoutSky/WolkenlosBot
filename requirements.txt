@@ -8,3 +8,5 @@ aiohttp~=3.8.3
 Pillow~=9.3.0
 openai~=0.25.0
 chatgpt~=2.2212.0
+pymongo~=4.3.3
+redis~=4.4.0

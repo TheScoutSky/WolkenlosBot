@@ -1,7 +1,9 @@
 import logging
 import os
 from pathlib import Path
+
 import nextcord
+
 import pymongo
 from nextcord.ext import commands
 from dotenv import load_dotenv
