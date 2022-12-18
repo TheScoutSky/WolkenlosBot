@@ -1,7 +1,6 @@
 import asyncio
 import os
 
-import aiosqlite
 import nextcord
 import pymongo
 from nextcord.ext import commands

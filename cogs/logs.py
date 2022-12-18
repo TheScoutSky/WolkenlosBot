@@ -1,7 +1,6 @@
 import discord
 import nextcord
 from nextcord.ext import commands
-import aiosqlite
 import main
 import pymongo
 import os

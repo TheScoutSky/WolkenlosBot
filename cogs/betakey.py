@@ -2,7 +2,6 @@ import asyncio
 import random
 import secrets
 
-import aiosqlite
 import nextcord
 from nextcord.ext import commands
 import nextcord.ui
@@ -61,7 +60,7 @@ class BetaKey(commands.Cog):
             embed = nextcord.Embed(title='Geschafft', color=nextcord.Color.green(), description='Du kannst jetzt dem Server joinen!')
             embed.add_field(name='Minecraft Account', value=f'{resault["username"]}')
             embed.add_field(name='Discord Account', value=message.author.name)
-            await message.channel.send(embed=embed@)
+            await message.channel.send(embed=embed)
 
 
 

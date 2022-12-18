@@ -1,7 +1,6 @@
 import logging
 import os
 from pathlib import Path
-import aiosqlite
 import nextcord
 import pymongo
 from nextcord.ext import commands
