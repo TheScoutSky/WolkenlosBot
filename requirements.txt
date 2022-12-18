@@ -9,3 +9,4 @@ Pillow~=9.3.0
 openai~=0.25.0
 chatgpt~=2.2212.0
 aiosqlite~=0.17.0
+sql
