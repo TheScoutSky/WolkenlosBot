@@ -43,8 +43,6 @@ class Logs(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         results = main.DB.settings.find_one({"_id": 1})
-        ids = results["log-channel"]
-        log = message.guild.get_channel(int(ids))
 
 
 

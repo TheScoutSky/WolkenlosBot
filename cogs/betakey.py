@@ -120,22 +120,35 @@ class Modal(nextcord.ui.Modal):
             required=True,
             custom_id='txtinput:key',
             placeholder='BB00-00000000000000000000000000000000',
-            min_length=32,
-            max_length=32,
+            min_length=48,
+            max_length=48,
             style=nextcord.TextInputStyle.short
         )
         self.add_item(self.key)
 
     async def callback(self, interaction: nextcord.Interaction) -> None:
-        key = self.key.value
-        em = nextcord.Embed(title='BETA-KEY AKTIVIERT',
+        key = f'{self.key.value}'
+        print(key)
+        resault = main.DB.betakeys.find_one({"key":key})
+        if resault is not None:
+            em = nextcord.Embed(title='BETA-KEY AKTIVIERT',
                             description=f"{interaction.user.mention} hat seinen Key aktiviert",
                             color=nextcord.Color.green())
-        em.add_field(name='Key', value=f'{key}')
-        results = main.DB.settings.find_one({"_id": 1})
-        ids = results["log-channel"]
-        log = interaction.user.guild.get_channel(int(ids))
-        return await log.send(embed=em)
+            em.add_field(name='Key', value=key)
+            main.DB.betakeys.delete_one({"key":key})
+            main.DB.activated.insert_one({
+                "dc":interaction.user.id,
+                "key":key
+            })
+            try:
+                embed = nextcord.Embed(title="BETAKEY AKTIVATED", description="Du hast deinen Betakey aktiviert", color=nextcord.Color.green())
+                await interaction.user.send(embed=embed)
+            except nextcord.Forbidden:
+                embed = None
+            results = main.DB.settings.find_one({"_id": 1})
+            ids = results["log-channel"]
+            log = interaction.user.guild.get_channel(int(ids))
+            return await log.send(embed=em)
 
 
 def setup(bot):
