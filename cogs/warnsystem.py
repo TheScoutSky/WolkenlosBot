@@ -13,10 +13,12 @@ class WarnSystem(commands.Cog):
         self.bot = bot
 
     @nextcord.user_command(name="Verwarnen", guild_ids=[main.GUILD_ID])
+    @commands.has_permissions(kick_members=True)
     async def warn_command(self, interaction: nextcord.Interaction, member: nextcord.Member):
         await interaction.response.send_modal(Modal(member))
 
     @nextcord.user_command(name="Warns", guild_ids=[main.GUILD_ID])
+    @commands.has_permissions(kick_members=True)
     async def warns_command(self, interaction: nextcord.Interaction, member: nextcord.Member):
         embed = nextcord.Embed(title=f'Warns von {member.name}', color=nextcord.Color.orange(),
                                description='Hier werden alle Warns aufgelistet')

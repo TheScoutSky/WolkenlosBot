@@ -9,7 +9,8 @@ import redis
 
 import main
 
-r = redis.Redis(host='65.21.125.211', port=187)
+CHAN = 1000
+
 
 class BetaKey(commands.Cog):
     def __init__(self, bot):
@@ -17,8 +18,7 @@ class BetaKey(commands.Cog):
 
     @nextcord.slash_command(name='betakey', guild_ids=[main.GUILD_ID])
     async def on_command(self, ctx, channel: nextcord.TextChannel = None, chance: int = None):
-        global chan
-        chan = chance or 10000
+        CHAN = chance or 10000
         channel = channel or ctx.channel
         author: nextcord.Member = ctx.user
         if not author.guild_permissions.administrator:
@@ -34,34 +34,47 @@ class BetaKey(commands.Cog):
                                   color=nextcord.Color.orange())
         keyEmbed.add_field(name='Wichtig', value='Du brauchst ein Minecraft-Account um einen Betakey einzuloesen!',
                            inline=False)
-        keyEmbed.add_field(name='Aktuelle Wahrscheinlichkeit', value=f'1 zu {chan}',
+        keyEmbed.add_field(name='Aktuelle Wahrscheinlichkeit', value=f'1 zu {CHAN}',
                            inline=False)
         keyEmbed.set_image(
             url='https://cdn.discordapp.com/attachments/1053333236094337116/1053379533769801799/Line3.png')
         view = Buttons()
-        await channel.send(view=view, embeds=[thumbnail, keyEmbed])
+        mes = await channel.send(view=view, embeds=[thumbnail, keyEmbed])
         message = await ctx.response.send_message('Done!', ephemeral=True)
         await asyncio.sleep(1)
         await message.delete()
+        if main.DB.settings.find_one({"_id":"generator"}) is None:
+            main.DB.settings.insert_one({
+                "_id": "generator",
+                "message": mes.id,
+                "channel": channel.id,
+                "chance": CHAN
+            })
+        else:
+            main.DB.settings.update_one({"_id":"generator"}, {"$set": {
+                "message": mes.id,
+                "channel": channel.id,
+                "chance": CHAN
+            }})
         await view.wait()
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        resault = main.DB.conttry.find_one({"key": message.content})
+        resault = main.DB.user.find_one({"key": message.content})
         if not resault is None:
-            main.DB.con.insert_one(
-                {
-                    "dc": message.author.id,
-                    "mc": f'{resault["mc"]}',
-                    "dcname": message.author.name,
-                    "mcname": f'{resault["username"]}'
-                })
-            main.DB.conttry.delete_one({"key": message.content})
-            embed = nextcord.Embed(title='Geschafft', color=nextcord.Color.green(), description='Du kannst jetzt dem Server joinen!')
+            main.DB.user.insert_one({
+                "dc": message.author.id,
+                "mc": resault["mc"],
+                "dc-name": message.author.name,
+                "mc-name": resault["username"],
+                "linked": "true"
+            })
+            main.DB.user.delete_one({"key": message.content})
+            embed = nextcord.Embed(title='Geschafft', color=nextcord.Color.green(),
+                                   description='Du kannst jetzt dem Server joinen!')
             embed.add_field(name='Minecraft Account', value=f'{resault["username"]}')
             embed.add_field(name='Discord Account', value=message.author.name)
             await message.channel.send(embed=embed)
-
 
 
 class Buttons(nextcord.ui.View):
@@ -71,13 +84,13 @@ class Buttons(nextcord.ui.View):
 
     @nextcord.ui.button(label='Generate', style=nextcord.ButtonStyle.primary, custom_id='button:key-gen')
     async def generate(self, button: nextcord.Button, interaction: nextcord.Interaction):
-        chance = random.randrange(1, chan)
+        chance = random.randrange(1, CHAN)
         auhtor = interaction.user
         if chance == 1:
             key = f'BB00-{secrets.token_urlsafe(32)}'
-            main.DB.betakeys.insert_one(
+            main.DB.user.insert_one(
                 {
-                    "key":key
+                    "beta-key": key
                 }
             )
             embed = nextcord.Embed(title='**CONGRATULATIONS**', description='Du hast einen Betakey gewonnen',
@@ -104,6 +117,20 @@ class Buttons(nextcord.ui.View):
 
     @nextcord.ui.button(label='Activate', style=nextcord.ButtonStyle.green, custom_id='button:key-act')
     async def activate(self, button: nextcord.Button, interaction: nextcord.Interaction):
+        resault = main.DB.user.find_one({"dc": interaction.user.id})
+        if resault is None:
+            embed = nextcord.Embed(title='Fehler',
+                                   description='Du musst deinen Discord Account mit Minecraft verlinken',
+                                   color=nextcord.Color.red())
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+        else:
+            if "activated" in resault:
+                embed = nextcord.Embed(title='Fehler',
+                                       description='Du hast bereits einen Betakey aktiviert!',
+                                       color=nextcord.Color.red())
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
         await interaction.response.send_modal(Modal())
 
 
@@ -129,19 +156,17 @@ class Modal(nextcord.ui.Modal):
     async def callback(self, interaction: nextcord.Interaction) -> None:
         key = f'{self.key.value}'
         print(key)
-        resault = main.DB.betakeys.find_one({"key":key})
+        resault = main.DB.user.find_one({"beta-key": key})
         if resault is not None:
             em = nextcord.Embed(title='BETA-KEY AKTIVIERT',
-                            description=f"{interaction.user.mention} hat seinen Key aktiviert",
-                            color=nextcord.Color.green())
+                                description=f"{interaction.user.mention} hat seinen Key aktiviert",
+                                color=nextcord.Color.green())
             em.add_field(name='Key', value=key)
-            main.DB.betakeys.delete_one({"key":key})
-            main.DB.activated.insert_one({
-                "dc":interaction.user.id,
-                "key":key
-            })
+            main.DB.user.delete_one({"beta-key": key})
+            main.DB.user.update_one({"dc": interaction.user.id}, {"$set": {"activated": "true"}})
             try:
-                embed = nextcord.Embed(title="BETAKEY AKTIVATED", description="Du hast deinen Betakey aktiviert", color=nextcord.Color.green())
+                embed = nextcord.Embed(title="BETAKEY AKTIVATED", description="Du hast deinen Betakey aktiviert",
+                                       color=nextcord.Color.green())
                 await interaction.user.send(embed=embed)
             except nextcord.Forbidden:
                 embed = None

@@ -8,6 +8,8 @@ import pymongo
 from nextcord.ext import commands
 from dotenv import load_dotenv
 
+from cogs import betakey
+
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
@@ -25,6 +27,13 @@ bot = commands.Bot(
 async def on_ready():
     MONGO = pymongo.MongoClient(os.getenv('MONGO_URI'))
     DB = MONGO.wolkenlos
+    resault = DB.settings.find_one({"_id": "generator"})
+    if resault is not None:
+        guild: nextcord.Guild = bot.get_guild(GUILD_ID)
+        channel = guild.get_channel(resault["channel"])
+        mes = channel.get_partial_message(resault["message"])
+        betakey.CHAN = resault["chance"]
+        await mes.edit(view=betakey.Buttons())
     print('bot is ready')
 
 
