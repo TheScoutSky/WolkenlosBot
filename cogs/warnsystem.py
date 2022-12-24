@@ -1,5 +1,6 @@
 import asyncio
 import os
+import secrets
 
 import nextcord
 import pymongo
@@ -32,11 +33,93 @@ class WarnSystem(commands.Cog):
             warns += 1
 
         embed.set_footer(text=f'requested by {interaction.user.name}', icon_url=interaction.user.avatar)
-        await interaction.channel.send(embed=embed)
-        message = await interaction.response.send_message('Done!', ephemeral=True)
-        await asyncio.sleep(2)
-        await message.delete()
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
+    @nextcord.user_command(name="Delete Warn", guild_ids=[main.GUILD_ID])
+    @commands.has_permissions(kick_members=True)
+    async def del_warns_command(self, interaction: nextcord.Interaction, member: nextcord.Member):
+        embed = nextcord.Embed(title=f'Delete Warns von {member.name}', color=nextcord.Color.orange(),
+                               description='Hier werden alle Warns aufgelistet')
+        resault = main.DB.warns.find({"user": member.id})
+        warns = 1
+
+        for res in resault:
+            embed.add_field(name=f'**{warns}. Warn**',
+                            value=f'Teamitglied: {member.guild.get_member(res["warner"]).name} '
+                                  f'\n Grund: {res["reason"]}'
+                                  f'\n Datum: {res["date"]}', inline=False)
+            warns += 1
+
+        embed.set_footer(text=f'requested by {interaction.user.name}', icon_url=interaction.user.avatar)
+        me = await interaction.response.send_message(embed=embed, ephemeral=True)
+        await me.edit(view=DropdownView(member, warns, me))
+
+
+class DropDownMenu(nextcord.ui.Select):
+    def __init__(self, user, amount, message):
+        self.user = user
+        self.amount =amount
+        self.message = message
+        resault = main.DB.warns.find({"user": self.user.id})
+        opt = []
+        warns = 1
+        for res in resault:
+            opt.append(nextcord.SelectOption(label=f"{warns}"))
+            warns +=1
+        if warns is 1:
+            opt.append(nextcord.SelectOption(label='None'))
+
+        super().__init__(
+            placeholder='Welcher Warn',
+            max_values=1,
+            min_values=1,
+            options=opt
+        )
+
+    async def callback(self, interaction: nextcord.Interaction):
+        if self.values[0] == 'None':
+            return
+        selection = int(self.values[0])
+        resault = main.DB.warns.find({"user": self.user.id})
+        num = 0
+        for res in resault:
+            num += 1
+            if num == selection:
+                print(res["user"])
+                print(num)
+                print(f'{selection}')
+                main.DB.warns.delete_one({"_id":f"{res['_id']}"})
+                embed = nextcord.Embed(title=f'Delete Warns von {self.user.name}', color=nextcord.Color.orange(),
+                                       description='Hier werden alle Warns aufgelistet')
+                resault = main.DB.warns.find({"user": self.user.id})
+                warns = 1
+
+                for res in resault:
+                    embed.add_field(name=f'**{warns}. Warn**',
+                                    value=f'Teamitglied: {self.user.guild.get_member(res["warner"]).name} '
+                                          f'\n Grund: {res["reason"]}'
+                                          f'\n Datum: {res["date"]}', inline=False)
+                    warns += 1
+
+                embed.set_footer(text=f'requested by {interaction.user.name}', icon_url=interaction.user.avatar)
+                await self.message.edit(view=DropdownView(self.user, self.amount, self.message), embed=embed)
+                results = main.DB.settings.find_one({"_id": 1})
+                ids = results["log-channel"]
+                embed = nextcord.Embed(title=f"__Deleted Warn from {self.user.name}__", description=f'Deleted by {interaction.user.mention}', color=nextcord.Color.red())
+                warner = self.user.guild.get_member(res["warner"])
+                embed.add_field(name='User-ID', value=f'{self.user.id}', inline=False)
+                embed.add_field(name='Teammitglied', value=f'{warner.mention}', inline=False)
+                embed.add_field(name='Grund', value=f'{res["reason"]}', inline=False)
+                log = interaction.user.guild.get_channel(int(ids))
+                await log.send(embed=embed)
+            else:
+                print('RIP')
+
+
+class DropdownView(nextcord.ui.View):
+    def __init__(self, user, amount, message):
+        super().__init__()
+        self.add_item(DropDownMenu(user, amount, message))
 
 
 class Modal(nextcord.ui.Modal):
@@ -61,6 +144,7 @@ class Modal(nextcord.ui.Modal):
     async def callback(self, interaction: nextcord.Interaction):
         main.DB.warns.insert_one(
             {
+                "_id":secrets.token_urlsafe(40),
                 "user": self.USER.id,
                 "reason": self.REASON.value,
                 "warner": interaction.user.id,
@@ -80,7 +164,6 @@ class Modal(nextcord.ui.Modal):
         ids = results["log-channel"]
         log = interaction.user.guild.get_channel(int(ids))
         await log.send(embed=embed)
-
 
 
 def setup(bot):

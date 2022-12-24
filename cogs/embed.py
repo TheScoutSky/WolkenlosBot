@@ -5,6 +5,7 @@ import asyncio
 
 CHANNEL = {}
 
+
 class Embed(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -52,44 +53,52 @@ class Modal(nextcord.ui.Modal):
             placeholder='Das ist die beschreibung'
         )
         self.add_item(self.DESCRIPTION)
-        self.COLOR_RED = nextcord.ui.TextInput(
-            label='Color - RED',
+        self.IMAGE = nextcord.ui.TextInput(
+            label='Image',
             style=nextcord.TextInputStyle.short,
-            max_length=3,
-            custom_id='input:color',
+            max_length=4000,
+            custom_id='input:image',
             required=False,
-            default_value='255'
+            placeholder='Link'
         )
-        self.add_item(self.COLOR_RED)
-        self.COLOR_GREEN = nextcord.ui.TextInput(
-            label='Color - Green',
+        self.add_item(self.IMAGE)
+        self.AUTHOR = nextcord.ui.TextInput(
+            label='Author Text',
             style=nextcord.TextInputStyle.short,
-            max_length=3,
-            custom_id='input:color2',
+            max_length=4000,
+            custom_id='input:author',
             required=False,
-            default_value='156'
+            placeholder='TheSkyScout oder Wolkenlos Team'
         )
-        self.add_item(self.COLOR_GREEN)
-        self.COLOR_BLUE = nextcord.ui.TextInput(
-            label='Color - Blue',
+        self.add_item(self.AUTHOR)
+        self.AUTHOR_URL = nextcord.ui.TextInput(
+            label='Author Image',
             style=nextcord.TextInputStyle.short,
-            max_length=3,
-            custom_id='input:color3',
+            max_length=4000,
+            custom_id='input:author_image',
             required=False,
-            default_value='0'
+            placeholder='Link'
         )
-        self.add_item(self.COLOR_BLUE)
+        self.add_item(self.AUTHOR_URL)
 
     async def callback(self, interaction: nextcord.Interaction) -> None:
         embed = nextcord.Embed(
             title=self.TITLE.value,
             description=self.DESCRIPTION.value,
-            color=nextcord.Color.from_rgb(int(self.COLOR_RED.value), int(self.COLOR_GREEN.value), int(self.COLOR_BLUE.value))
+            color=nextcord.Color.orange()
         )
         embed.set_image(url='https://cdn.discordapp.com/attachments/1053333236094337116/1053379533769801799/Line3.png')
-        embed.set_footer(text=f'{interaction.user.top_role.name} | {interaction.user.name}', icon_url=interaction.user.avatar)
+        if self.AUTHOR and self.AUTHOR_URL is not None:
+            embed.set_footer(text=f'{self.AUTHOR.value}',
+                            icon_url=self.AUTHOR_URL.value)
+
         channel = interaction.user.guild.get_channel(CHANNEL.__getitem__(interaction.user.id))
-        await channel.send(embed=embed)
+        if self.IMAGE is None:
+            await channel.send(embed=embed)
+        else:
+            image = nextcord.Embed(color=nextcord.Color.orange())
+            image.set_image(self.IMAGE.value)
+            await channel.send(embeds=[image, embed])
         mes = await interaction.response.send_message('Done!', ephemeral=True)
         await asyncio.sleep(2)
         await mes.delete()

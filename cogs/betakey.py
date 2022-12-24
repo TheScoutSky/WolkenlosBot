@@ -60,15 +60,25 @@ class BetaKey(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        if message.author.id == self.bot.user.id:
+            return
         resault = main.DB.user.find_one({"key": message.content})
         if not resault is None:
-            main.DB.user.insert_one({
-                "dc": message.author.id,
-                "mc": resault["mc"],
-                "dc-name": message.author.name,
-                "mc-name": resault["username"],
-                "linked": "true"
-            })
+            if main.DB.user.find_one({"dc":message.author.id}) is None:
+                main.DB.user.insert_one({
+                    "dc": message.author.id,
+                    "mc": resault["mc"],
+                    "dc-name": message.author.name,
+                    "mc-name": resault["username"],
+                    "linked": "true"
+                })
+            else:
+                main.DB.user.update_one({"dc":message.author.id},{"$set": {
+                    "mc": resault["mc"],
+                    "dc-name": message.author.name,
+                    "mc-name": resault["username"],
+                    "linked": "true"
+                }})
             main.DB.user.delete_one({"key": message.content})
             embed = nextcord.Embed(title='Geschafft', color=nextcord.Color.green(),
                                    description='Du kannst jetzt dem Server joinen!')

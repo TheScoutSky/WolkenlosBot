@@ -18,7 +18,7 @@ log = logging.getLogger('BOT-MAIN')
 bot = commands.Bot(
     command_prefix='!',
     intents=nextcord.Intents.all(),
-    activity=nextcord.Activity(type=nextcord.ActivityType.playing, name='Wolkenlos!!!'),
+    activity=nextcord.Activity(type=nextcord.ActivityType.playing, name='Frohe Weihnachten!'),
     status=nextcord.Status.online
 )
 
