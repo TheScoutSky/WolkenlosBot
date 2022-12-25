@@ -6,6 +6,7 @@ class AutoModeration(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+
     @commands.Cog.listener()
     async def on_message(self, message: nextcord.Message):
         author: nextcord.Member = message.author

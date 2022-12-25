@@ -22,6 +22,7 @@ class BetaKey(commands.Cog):
         CHAN = chance or 10000
         channel = channel or ctx.channel
         author: nextcord.Member = ctx.user
+        main.DB.settings.update_one({"_id": 1}, {"$set":{"chance":CHAN}})
         if not author.guild_permissions.administrator:
             embed = nextcord.Embed(title='Oops', description='Dazu hast du keine Rechte!', color=nextcord.Color.red())
             message = ctx.response.send_message(embed=embed, ephemeral=True)
@@ -82,6 +83,8 @@ class Buttons(nextcord.ui.View):
 
     @nextcord.ui.button(label='Generate', style=nextcord.ButtonStyle.primary, custom_id='button:key-gen')
     async def generate(self, button: nextcord.Button, interaction: nextcord.Interaction):
+        res = main.DB.settings.find_one({"_id": 1})
+        CHAN = res["chance"]
         chance = random.randrange(1, CHAN)
         auhtor = interaction.user
         if chance == 1:
