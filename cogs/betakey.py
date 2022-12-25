@@ -44,19 +44,6 @@ class BetaKey(commands.Cog):
         message = await ctx.response.send_message('Done!', ephemeral=True)
         await asyncio.sleep(1)
         await message.delete()
-        if main.DB.settings.find_one({"_id":"generator"}) is None:
-            main.DB.settings.insert_one({
-                "_id": "generator",
-                "message": mes.id,
-                "channel": channel.id,
-                "chance": CHAN
-            })
-        else:
-            main.DB.settings.update_one({"_id":"generator"}, {"$set": {
-                "message": mes.id,
-                "channel": channel.id,
-                "chance": CHAN
-            }})
         await view.wait()
 
     @commands.Cog.listener()
@@ -90,7 +77,7 @@ class BetaKey(commands.Cog):
 
 class Buttons(nextcord.ui.View):
     def __init__(self):
-        super().__init__()
+        super().__init__(timeout=None)
         self.value = None
 
     @nextcord.ui.button(label='Generate', style=nextcord.ButtonStyle.primary, custom_id='button:key-gen')

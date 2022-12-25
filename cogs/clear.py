@@ -8,11 +8,13 @@ class Clear(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @nextcord.slash_command(name='clear', description='Loesche eine beliebige Anzahl an Nachrichten', guild_ids=[main.GUILD_ID])
+    @nextcord.slash_command(name='clear', description='Loesche eine beliebige Anzahl an Nachrichten',
+                            guild_ids=[main.GUILD_ID])
     @commands.has_permissions(manage_messages=True)
-    async def clear_command(self, interaction:nextcord.Interaction, anzahl:int):
+    async def clear_command(self, interaction: nextcord.Interaction, anzahl: int):
         await interaction.channel.purge(limit=anzahl)
-        embed = nextcord.Embed(title="Delete Messages", color=nextcord.Color.green(), description=f'Du hast erfolgreich {anzahl} Nachrichten geloescht')
+        embed = nextcord.Embed(title="Delete Messages", color=nextcord.Color.green(),
+                               description=f'Du hast erfolgreich {anzahl} Nachrichten geloescht')
         await interaction.response.send_message(embed=embed, ephemeral=True)
         embed = nextcord.Embed(title="Delete Messages", color=nextcord.Color.green())
         embed.add_field(name='User', value=f'{interaction.user.mention}', inline=True)
@@ -22,9 +24,6 @@ class Clear(commands.Cog):
         ids = results["log-channel"]
         log = interaction.user.guild.get_channel(int(ids))
         await log.send(embed=embed)
-
-
-
 
 
 def setup(bot):

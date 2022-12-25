@@ -22,25 +22,19 @@ bot = commands.Bot(
     status=nextcord.Status.online
 )
 
-
 @bot.event
 async def on_ready():
+    persistent_views_added = False
     MONGO = pymongo.MongoClient(os.getenv('MONGO_URI'))
     DB = MONGO.wolkenlos
     resault = DB.settings.find_one({"_id": "generator"})
-    if resault is not None:
-        guild: nextcord.Guild = bot.get_guild(GUILD_ID)
-        channel = guild.get_channel(resault["channel"])
-        mes = channel.get_partial_message(resault["message"])
-        betakey.CHAN = resault["chance"]
-        await mes.edit(view=betakey.Buttons())
-    resault = DB.tickets.find_one({"_id": "settings"})
-    if resault is not None:
-        guild: nextcord.Guild = bot.get_guild(GUILD_ID)
-        channel = guild.get_channel(resault["channel"])
-        mes = channel.get_partial_message(resault["message"])
-        await mes.edit(view=tickets.TicketButton())
+    if not persistent_views_added:
+        bot.add_view(tickets.TicketButton())
+        bot.add_view(tickets.TicketButtons())
+        bot.add_view(betakey.Buttons())
+        persistent_views_added = True
     print('bot is ready')
+    print(f"Logged in as {bot.user} (ID: {bot.user.id})")
 
 
 USER_VERIFY = {}
