@@ -8,7 +8,7 @@ import pymongo
 from nextcord.ext import commands
 from dotenv import load_dotenv
 
-from cogs import betakey
+from cogs import betakey, tickets
 
 load_dotenv()
 
@@ -34,6 +34,12 @@ async def on_ready():
         mes = channel.get_partial_message(resault["message"])
         betakey.CHAN = resault["chance"]
         await mes.edit(view=betakey.Buttons())
+    resault = DB.tickets.find_one({"_id": "settings"})
+    if resault is not None:
+        guild: nextcord.Guild = bot.get_guild(GUILD_ID)
+        channel = guild.get_channel(resault["channel"])
+        mes = channel.get_partial_message(resault["message"])
+        await mes.edit(view=tickets.TicketButton())
     print('bot is ready')
 
 

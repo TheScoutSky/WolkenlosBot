@@ -17,6 +17,7 @@ class BetaKey(commands.Cog):
         self.bot = bot
 
     @nextcord.slash_command(name='betakey', guild_ids=[main.GUILD_ID])
+    @commands.has_permissions(administrator=True)
     async def on_command(self, ctx, channel: nextcord.TextChannel = None, chance: int = None):
         CHAN = chance or 10000
         channel = channel or ctx.channel
