@@ -1,12 +1,9 @@
 git+https://github.com/mccoderpy/discord.py-message-components.git@developer
 python-dotenv~=0.21.0
-discord~=2.1.0
 p~=1.4.0
-discord-py-slash-command~=4.2.1
 nextcord~=2.3.2
 aiohttp~=3.8.3
 Pillow~=9.3.0
 openai~=0.25.0
 chatgpt~=2.2212.0
 pymongo~=4.3.3
-redis~=4.4.0
