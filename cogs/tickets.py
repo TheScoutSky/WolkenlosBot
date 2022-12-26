@@ -17,7 +17,7 @@ class TicketSystem(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @nextcord.slash_command(name='sticket', guild_ids=[])
+    @nextcord.slash_command(name='sticket')
     async def main(self, inteaction: nextcord.Interaction):
         pass
 
@@ -133,7 +133,7 @@ class TicketButtons(nextcord.ui.View):
                                    color=nextcord.Color.red())
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
-        fileName = f'{interaction.channel.name}.txt'
+        fileName = f'transcripts/{interaction.channel.name}.txt'
         with open(fileName, "w") as file:
             async for msg in interaction.channel.history(limit=None):
                 file.write(f'{msg.created_at} - {msg.author.display_name}: {msg.clean_content}\n')

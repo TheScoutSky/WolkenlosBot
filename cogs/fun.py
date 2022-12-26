@@ -2,17 +2,16 @@ import asyncio
 import base64
 import os
 import random
-
-from nextcord.ext import commands
-import nextcord
-from PIL import Image
+import time
 from io import BytesIO
 
 import aiohttp
-import time
-import main
+import nextcord
 import openai
 from chatgpt import Conversation
+from nextcord.ext import commands
+
+import main
 
 api_key = os.getenv('API_KEY')
 openai.api_key = api_key

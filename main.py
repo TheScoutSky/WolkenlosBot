@@ -1,11 +1,12 @@
 import logging
 import os
+import random
 from pathlib import Path
 
 import nextcord
 
 import pymongo
-from nextcord.ext import commands
+from nextcord.ext import commands, tasks
 from dotenv import load_dotenv
 
 from cogs import betakey, tickets
@@ -37,6 +38,8 @@ async def on_ready():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
 
 
+
+
 USER_VERIFY = {}
 GUILD_SAVE = {}
 GEN_USE = {}
@@ -45,6 +48,7 @@ GUILD_ID = 1030425830725271562
 CLIENT_ID = 1051582605050523649
 MONGO = pymongo.MongoClient(os.getenv('MONGO_URI'))
 DB = MONGO.wolkenlos
+x = 0
 
 if __name__ == '__main__':
     log.info('Starting bot...')
